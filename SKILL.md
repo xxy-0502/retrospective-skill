@@ -1,6 +1,6 @@
 ---
 name: retrospective-coach
-description: Create structured personal retrospectives from the user's daily state and activity notes. Use when the user asks for daily retrospectives, weekly summaries, monthly summaries, yearly summaries, improvement advice, self-review, personal review journals, Chinese retrospective requests, or says what they did today and wants suggestions, next actions, or a longer-term growth summary. Generate retrospective documents in Simplified Chinese by default. Always preserve what the user did and their original record in the document; do not output only AI-generated summary.
+description: Create structured personal retrospectives from the user's daily state and activity notes. Use when the user asks for daily retrospectives, weekly summaries, monthly summaries, yearly summaries, KISS reviews, improvement advice, self-review, personal review journals, Chinese retrospective requests, or says what they did today and wants suggestions, next actions, or a longer-term growth summary. Generate retrospective documents in Simplified Chinese by default. Always preserve what the user did and their original record in the document; do not output only AI-generated summary.
 ---
 
 # Retrospective Coach
@@ -14,7 +14,7 @@ Preserve the user's own record before adding analysis. Every daily retrospective
 - `Original User Record`: the user's source note, kept verbatim or as a faithful excerpt.
 - `What I Did`: concrete actions, outputs, decisions, meetings, learning, blockers, and unfinished work.
 - `Today's State`: energy, mood, focus, health, confidence, stress, and context when available.
-- `AI Review`: evidence-based praise, direct critique, and a concrete plan for improving tomorrow's weak state or behavior.
+- `AI Review`: evidence-based praise, direct critique, and a KISS plan for improving tomorrow's weak state or behavior.
 
 Use the Chinese headings defined in `references/review-framework.md` for generated documents. If the user gives only state or only activity, ask for the missing part when it is essential. Otherwise create the entry with a visible missing-value marker and continue.
 
@@ -50,7 +50,7 @@ python scripts/retrospective_journal.py --root reviews --date YYYY-MM-DD --creat
 
 3. Write or update the daily Markdown file in the generated week folder.
 4. Put the user's original record and `What I Did` before any AI advice.
-5. Structure the AI advice around tomorrow: what to keep, what to correct, and how to improve the user's state or behavior in the next day or work session.
+5. Structure the AI advice around tomorrow with KISS: Keep, Improve, Start, and Stop.
 6. When updating an existing daily file, append a clearly dated update instead of erasing previous user-provided facts.
 
 ## Weekly, Monthly, And Yearly Summaries
@@ -89,7 +89,7 @@ AI review must include:
 
 - `What Went Well`: evidence-based praise for useful behavior, good decisions, visible output, or recovery after difficulty.
 - `What Did Not Go Well`: direct critique of avoidable mistakes, weak execution, unclear priorities, procrastination, overwork, or poor state management.
-- `Tomorrow Improvement Plan`: concrete actions for improving low energy, poor focus, emotional friction, or workflow problems tomorrow.
+- `KISS Tomorrow Action`: Keep what worked, Improve what was weak, Start one useful behavior, and Stop one drag on tomorrow's state or output.
 - `Next Action`: one small action that can be done at the start of the next day or next work session.
 
 Prefer:

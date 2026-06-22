@@ -90,7 +90,21 @@ def daily_template(entry_date: date, week: str, month: str) -> str:
 
 - 待填写。
 
-### 明日改进方案
+### KISS 明日行动
+
+#### Keep｜继续保持
+
+- 待填写。
+
+#### Improve｜需要改进
+
+- 待填写。
+
+#### Start｜开始做
+
+- 待填写。
+
+#### Stop｜停止做
 
 - 待填写。
 
