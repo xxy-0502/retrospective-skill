@@ -1,13 +1,13 @@
 ---
 name: retrospective-coach
-description: Create structured personal retrospectives from the user's daily state and activity notes. Use when the user asks for daily retrospectives, weekly summaries, monthly summaries, yearly summaries, KISS reviews, improvement advice, self-review, personal review journals, Chinese retrospective requests, or says what they did today and wants suggestions, next actions, or a longer-term growth summary. Generate retrospective documents in Simplified Chinese by default. Always preserve what the user did and their original record in the document; do not output only AI-generated summary.
+description: Create structured personal retrospectives and planning documents from the user's daily state, activity notes, goals, and tasks. Use when the user asks for daily retrospectives, daily plans, tomorrow plans, weekly summaries, monthly summaries, yearly summaries, KISS reviews, improvement advice, self-review, personal review journals, Chinese retrospective requests, Chinese planning requests, or says what they did today and wants suggestions, next actions, plans, or a longer-term growth summary. Generate documents in Simplified Chinese by default. Always preserve what the user did, planned, and originally said in the document; do not output only AI-generated summary.
 ---
 
 # Retrospective Coach
 
 ## Core Rule
 
-Generate the retrospective document in Simplified Chinese by default, including headings, summaries, praise, critique, and improvement plans. Use another language only when the user explicitly asks for it. Keep folder names and file names in the existing English/numeric path format.
+Generate retrospective and planning documents in Simplified Chinese by default, including headings, summaries, praise, critique, KISS actions, and plans. Use another language only when the user explicitly asks for it. Keep folder names and file names in the existing English/numeric path format.
 
 Preserve the user's own record before adding analysis. Every daily retrospective document must include:
 
@@ -18,14 +18,24 @@ Preserve the user's own record before adding analysis. Every daily retrospective
 
 Use the Chinese headings defined in `references/review-framework.md` for generated documents. If the user gives only state or only activity, ask for the missing part when it is essential. Otherwise create the entry with a visible missing-value marker and continue.
 
+Every daily planning document must include:
+
+- Original plan input: the user's goal, task, state, constraints, and plan request, kept verbatim or faithfully excerpted.
+- Tomorrow goals: the most important target, secondary target, and optional target.
+- State forecast: expected energy, mood, risks, and constraints when available.
+- Priorities: must-do, should-progress, and safe-to-drop work.
+- KISS implementation: Keep, Improve, Start, and Stop for tomorrow.
+- Time blocks, risks and fallback plan, definition of done, and first starting step.
+
 ## Storage Layout
 
 Use `scripts/retrospective_journal.py` to create consistent paths before writing or updating review files.
 
-Default root:
+Default roots:
 
 ```text
 reviews/
+plans/
 ```
 
 Path format:
@@ -35,6 +45,7 @@ reviews/YYYY/YYYY-MM/YYYY-Www/YYYY-MM-DD.md
 reviews/YYYY/YYYY-MM/YYYY-Www/week-summary.md
 reviews/YYYY/YYYY-MM/month-summary.md
 reviews/YYYY/year-summary.md
+plans/YYYY/YYYY-MM/YYYY-Www/YYYY-MM-DD-plan.md
 ```
 
 Use the user's specified date when provided. Otherwise use today's local date.
@@ -52,6 +63,30 @@ python scripts/retrospective_journal.py --root reviews --date YYYY-MM-DD --creat
 4. Put the user's original record and `What I Did` before any AI advice.
 5. Structure the AI advice around tomorrow with KISS: Keep, Improve, Start, and Stop.
 6. When updating an existing daily file, append a clearly dated update instead of erasing previous user-provided facts.
+
+## Planning Workflow
+
+Use planning mode when the user asks for a plan, daily plan, tomorrow plan, next action plan, or asks to turn a retrospective into tomorrow's plan.
+
+1. Parse the user's goals, tasks, deadlines, state, constraints, and available time.
+2. Use tomorrow's date when the user asks for tomorrow's plan; use the user's specified date when provided.
+3. Run the path helper:
+
+```bash
+python scripts/retrospective_journal.py --mode plan --plans-root plans --date YYYY-MM-DD --create
+```
+
+4. Write or update the generated plan file.
+5. Preserve the user's source planning input before AI planning.
+6. Keep the plan practical: limit must-do work, include explicit tradeoffs, and define what counts as done.
+7. Use KISS implementation to convert review lessons into tomorrow's behavior: what to keep, improve, start, and stop.
+8. If the user asks to create review and plan placeholders for the same target date, run:
+
+```bash
+python scripts/retrospective_journal.py --mode both --root reviews --plans-root plans --date YYYY-MM-DD --create
+```
+
+For "today's review + tomorrow's plan", run review mode with today's date and plan mode with tomorrow's date.
 
 ## Weekly, Monthly, And Yearly Summaries
 

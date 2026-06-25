@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""Create deterministic folders and placeholder files for retrospectives."""
+"""Create deterministic folders and placeholder files for retrospectives and plans."""
 
 from __future__ import annotations
 
@@ -16,7 +16,7 @@ def parse_date(value: str | None) -> date:
     return datetime.strptime(value, "%Y-%m-%d").date()
 
 
-def build_paths(root: Path, entry_date: date) -> dict[str, Path | str | int]:
+def build_base_paths(root: Path, entry_date: date) -> dict[str, Path | str | int]:
     iso_year, iso_week, _ = entry_date.isocalendar()
     year = f"{entry_date.year:04d}"
     month = f"{entry_date.year:04d}-{entry_date.month:02d}"
@@ -36,11 +36,34 @@ def build_paths(root: Path, entry_date: date) -> dict[str, Path | str | int]:
         "year_dir": year_dir,
         "month_dir": month_dir,
         "week_dir": week_dir,
-        "daily_path": week_dir / f"{entry_date.isoformat()}.md",
-        "week_summary_path": week_dir / "week-summary.md",
-        "month_summary_path": month_dir / "month-summary.md",
-        "year_summary_path": year_dir / "year-summary.md",
     }
+
+
+def build_review_paths(root: Path, entry_date: date) -> dict[str, Path | str | int]:
+    paths = build_base_paths(root, entry_date)
+    week_dir = paths["week_dir"]
+    month_dir = paths["month_dir"]
+    year_dir = paths["year_dir"]
+    if not all(isinstance(p, Path) for p in [week_dir, month_dir, year_dir]):
+        raise TypeError("base directories must be Path objects")
+    paths.update(
+        {
+            "daily_path": week_dir / f"{entry_date.isoformat()}.md",
+            "week_summary_path": week_dir / "week-summary.md",
+            "month_summary_path": month_dir / "month-summary.md",
+            "year_summary_path": year_dir / "year-summary.md",
+        }
+    )
+    return paths
+
+
+def build_plan_paths(root: Path, entry_date: date) -> dict[str, Path | str | int]:
+    paths = build_base_paths(root, entry_date)
+    week_dir = paths["week_dir"]
+    if not isinstance(week_dir, Path):
+        raise TypeError("week_dir must be a Path")
+    paths.update({"plan_path": week_dir / f"{entry_date.isoformat()}-plan.md"})
+    return paths
 
 
 def write_if_missing(path: Path, content: str) -> None:
@@ -139,6 +162,84 @@ def week_template(week: str) -> str:
 """
 
 
+def plan_template(entry_date: date, week: str, month: str) -> str:
+    return f"""# 每日计划 - {entry_date.isoformat()}
+
+元数据：
+
+- 日期：{entry_date.isoformat()}
+- 月份：{month}
+- 周次：{week}
+
+## 原始计划输入
+
+未提供。
+
+## 明日目标
+
+- 最重要目标：待填写。
+- 次要目标：待填写。
+- 不做也可以：待填写。
+
+## 状态预判
+
+- 精力：未提供。
+- 情绪：未提供。
+- 风险：未提供。
+
+## 优先级
+
+### 必须完成
+
+- 待填写。
+
+### 尽量推进
+
+- 待填写。
+
+### 可以放弃
+
+- 待填写。
+
+## KISS 落地
+
+### Keep｜继续保持
+
+- 待填写。
+
+### Improve｜需要改进
+
+- 待填写。
+
+### Start｜开始做
+
+- 待填写。
+
+### Stop｜停止做
+
+- 待填写。
+
+## 时间块计划
+
+- 上午：待填写。
+- 下午：待填写。
+- 晚上：待填写。
+
+## 风险与预案
+
+- 可能卡住：待填写。
+- 预案：待填写。
+
+## 完成定义
+
+- 待填写。
+
+## 开局第一步
+
+- 待填写。
+"""
+
+
 def month_template(month: str) -> str:
     return f"""# 月总结 - {month}
 
@@ -189,7 +290,7 @@ def year_template(year: str) -> str:
 """
 
 
-def create_files(paths: dict[str, Path | str | int]) -> None:
+def create_review_files(paths: dict[str, Path | str | int]) -> None:
     week_dir = paths["week_dir"]
     if not isinstance(week_dir, Path):
         raise TypeError("week_dir must be a Path")
@@ -210,6 +311,21 @@ def create_files(paths: dict[str, Path | str | int]) -> None:
     write_if_missing(year_summary_path, year_template(str(paths["year"])))
 
 
+def create_plan_file(paths: dict[str, Path | str | int]) -> None:
+    week_dir = paths["week_dir"]
+    if not isinstance(week_dir, Path):
+        raise TypeError("week_dir must be a Path")
+
+    week_dir.mkdir(parents=True, exist_ok=True)
+
+    plan_path = paths["plan_path"]
+    if not isinstance(plan_path, Path):
+        raise TypeError("plan_path must be a Path")
+
+    entry_date = datetime.strptime(str(paths["date"]), "%Y-%m-%d").date()
+    write_if_missing(plan_path, plan_template(entry_date, str(paths["week"]), str(paths["month"])))
+
+
 def serializable(paths: dict[str, Path | str | int]) -> dict[str, str | int]:
     result: dict[str, str | int] = {}
     for key, value in paths.items():
@@ -217,21 +333,48 @@ def serializable(paths: dict[str, Path | str | int]) -> dict[str, str | int]:
     return result
 
 
+def serializable_nested(value: object) -> object:
+    if isinstance(value, Path):
+        return str(value)
+    if isinstance(value, dict):
+        return {str(k): serializable_nested(v) for k, v in value.items()}
+    return value
+
+
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Create retrospective journal folders and placeholder files.")
-    parser.add_argument("--root", default="reviews", help="Root folder for retrospective files.")
+    parser = argparse.ArgumentParser(description="Create retrospective review and plan folders and placeholder files.")
+    parser.add_argument("--root", default="reviews", help="Root folder for retrospective review files.")
+    parser.add_argument("--plans-root", default="plans", help="Root folder for plan files.")
+    parser.add_argument("--mode", choices=["review", "plan", "both"], default="review", help="Which file set to create.")
+    parser.add_argument("--plan", action="store_true", help="Shortcut for --mode plan.")
     parser.add_argument("--date", help="Entry date in YYYY-MM-DD format. Defaults to today.")
     parser.add_argument("--create", action="store_true", help="Create folders and placeholder files if missing.")
     args = parser.parse_args()
 
-    root = Path(args.root)
+    mode = "plan" if args.plan else args.mode
     entry_date = parse_date(args.date)
-    paths = build_paths(root, entry_date)
 
+    if mode == "review":
+        paths = build_review_paths(Path(args.root), entry_date)
+        if args.create:
+            create_review_files(paths)
+        print(json.dumps(serializable(paths), ensure_ascii=False, indent=2))
+        return 0
+
+    if mode == "plan":
+        paths = build_plan_paths(Path(args.plans_root), entry_date)
+        if args.create:
+            create_plan_file(paths)
+        print(json.dumps(serializable(paths), ensure_ascii=False, indent=2))
+        return 0
+
+    review_paths = build_review_paths(Path(args.root), entry_date)
+    plan_paths = build_plan_paths(Path(args.plans_root), entry_date)
     if args.create:
-        create_files(paths)
+        create_review_files(review_paths)
+        create_plan_file(plan_paths)
 
-    print(json.dumps(serializable(paths), ensure_ascii=False, indent=2))
+    print(json.dumps(serializable_nested({"review": review_paths, "plan": plan_paths}), ensure_ascii=False, indent=2))
     return 0
 
 

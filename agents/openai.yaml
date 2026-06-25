@@ -1,4 +1,4 @@
 interface:
   display_name: "Retrospective Coach"
-  short_description: "Structured daily, weekly, monthly, yearly reviews"
-  default_prompt: "Use $retrospective-coach to record today's work in Chinese and create a rational, lively KISS improvement review."
+  short_description: "Chinese retrospectives and practical plans"
+  default_prompt: "Use $retrospective-coach to review today in Chinese and create a practical KISS plan for tomorrow."
